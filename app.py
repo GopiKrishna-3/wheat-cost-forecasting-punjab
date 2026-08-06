@@ -5,6 +5,8 @@ import joblib
 import shap
 import matplotlib.pyplot as plt
 import os
+import datetime
+import calendar
 
 # --- Page Config ---
 st.set_page_config(page_title="Punjab Wheat Input Cost Forecaster", layout="wide")
@@ -259,16 +261,13 @@ if generate_btn:
     # 6. Seasonal Planning Calendar
     st.subheader("Seasonal Planning Calendar")
     
-    # Component 1 - When to Budget
-    st.markdown("#### When to Budget: Wheat Crop Calendar (Punjab)")
-    st.caption("This shows WHEN during the season each cost is typically incurred, based on Punjab Agricultural University (PAU) recommended practices — not measured monthly data.")
-    
     months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr']
     
     seed_pred = predictions.get('Seed cost (Rs./Hectare)', 0)
     fert_pred = predictions.get('Fertilizer cost (Rs./Hectare)', 0)
     irr_pred = predictions.get('Irrigation charges (Rs./Hectare)', 0)
     labour_pred = predictions.get('Human Labour cost (Rs./Hectare)', 0)
+    total_c2_pred = predictions.get('Total Cost of Cultivation C2 (Rs./Hectare)', 0)
     
     allocations = {
         'Seed cost': [0, seed_pred * 1.0, 0, 0, 0, 0, 0],
@@ -277,12 +276,89 @@ if generate_btn:
         'Human Labour cost': [0, labour_pred * 0.3, 0, labour_pred * 0.2, 0, labour_pred * 0.25, labour_pred * 0.25]
     }
     
+    unallocated = total_c2_pred - (seed_pred + fert_pred + irr_pred + labour_pred)
+    allocations['Total Cost (C2)'] = [(unallocated / 7) + sum(allocations[k][i] for k in ['Seed cost', 'Fertilizer cost', 'Irrigation charges', 'Human Labour cost']) for i in range(7)]
+
+    # --- Custom Date Range Estimator ---
+    st.markdown("#### Custom Date Range Estimator")
+    st.caption("Estimated costs for your selected period, prorated from the seasonal crop-calendar allocation shown below. Not based on measured daily/weekly data — CACP publishes cost data annually only.")
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        granularity = st.radio("View granularity", ["Day-to-day", "Week-to-week", "Month-to-month"], horizontal=True)
+    with col2:
+        season_start = datetime.date(target_year, 10, 1)
+        season_end = datetime.date(target_year + 1, 4, 30)
+        
+        date_range = st.date_input("Select Date Range (Oct 1 - Apr 30)", 
+                                   value=(season_start, season_end), 
+                                   min_value=season_start, 
+                                   max_value=season_end)
+                                   
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        sel_start, sel_end = date_range
+        days_in_range = (sel_end - sel_start).days + 1
+        
+        if days_in_range > 0:
+            month_info = [
+                (10, target_year, 'Oct'),
+                (11, target_year, 'Nov'),
+                (12, target_year, 'Dec'),
+                (1, target_year + 1, 'Jan'),
+                (2, target_year + 1, 'Feb'),
+                (3, target_year + 1, 'Mar'),
+                (4, target_year + 1, 'Apr')
+            ]
+            
+            dates_idx = pd.date_range(sel_start, sel_end)
+            daily_costs = {k: np.zeros(len(dates_idx)) for k in allocations.keys()}
+            
+            for i, (m, y, m_name) in enumerate(month_info):
+                days_in_m = calendar.monthrange(y, m)[1]
+                m_start = datetime.date(y, m, 1)
+                m_end = datetime.date(y, m, days_in_m)
+                
+                overlap = (dates_idx.date >= m_start) & (dates_idx.date <= m_end)
+                if overlap.any():
+                    for cat, alloc in allocations.items():
+                        daily_rate = alloc[i] / days_in_m
+                        daily_costs[cat][overlap] = daily_rate
+                        
+            df_daily = pd.DataFrame(daily_costs, index=dates_idx)
+            
+            st.markdown(f"**Total Estimated Cost for Selected Window ({days_in_range} days):**")
+            
+            if granularity == "Day-to-day":
+                cols_day = st.columns(5)
+                for j, cat in enumerate(allocations.keys()):
+                    tot = df_daily[cat].sum()
+                    rate = tot / days_in_range
+                    cols_day[j].metric(cat, f"₹{tot:,.0f}", f"₹{rate:,.0f}/day", delta_color="off")
+                    
+            elif granularity == "Week-to-week":
+                df_weekly = df_daily.resample('W').sum()
+                df_weekly.index = df_weekly.index.strftime('%b %d, %Y')
+                st.bar_chart(df_weekly, color=[color_map.get(c, '#8A97AC') for c in df_weekly.columns])
+                
+            elif granularity == "Month-to-month":
+                df_monthly = df_daily.resample('ME').sum()
+                df_monthly.index = df_monthly.index.strftime('%b %Y')
+                st.bar_chart(df_monthly, color=[color_map.get(c, '#8A97AC') for c in df_monthly.columns])
+        
+    st.markdown("<hr class='gold-divider' style='border-top: 1px dashed #E0A83E; opacity: 0.5;'>", unsafe_allow_html=True)
+    
+    # Component 1 - When to Budget
+    st.markdown("#### When to Budget: Wheat Crop Calendar (Punjab)")
+    st.caption("This shows WHEN during the season each cost is typically incurred, based on Punjab Agricultural University (PAU) recommended practices — not measured monthly data.")
+    
     fig3, ax3 = plt.subplots(figsize=(10, 5))
     fig3.patch.set_facecolor('#0F1C2E')
     ax3.set_facecolor('#0F1C2E')
     
     bottoms = np.zeros(len(months))
     for component, alloc in allocations.items():
+        if component == 'Total Cost (C2)':
+            continue
         color = color_map.get(component, '#F2ECE1')
         ax3.bar(months, alloc, bottom=bottoms, label=component, color=color)
         bottoms += np.array(alloc)
