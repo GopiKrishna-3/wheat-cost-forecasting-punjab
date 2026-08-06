@@ -18,6 +18,18 @@ h1, h2, h3 {
     font-family: 'Fraunces', serif !important;
 }
 
+h1 {
+    font-size: 2.5rem !important; /* ~40px */
+}
+
+h2 {
+    font-size: 2rem !important; /* ~32px */
+}
+
+h3 {
+    font-size: 1.5rem !important; /* ~24px */
+}
+
 body, p, label, .stMarkdown {
     font-family: 'Inter', sans-serif !important;
 }
@@ -44,7 +56,7 @@ body, p, label, .stMarkdown {
 .eyebrow {
     color: #7C8BA1;
     letter-spacing: 2px;
-    font-size: 0.8em;
+    font-size: 0.85rem !important; /* ~14px */
     font-weight: 600;
     text-transform: uppercase;
     font-family: 'Inter', sans-serif;
@@ -241,6 +253,93 @@ if generate_btn:
     ax2.grid(True, linestyle='--', alpha=0.3, color='#8A97AC')
     
     st.pyplot(fig2)
+
+    st.markdown('<hr class="gold-divider">', unsafe_allow_html=True)
+    
+    # 6. Seasonal Planning Calendar
+    st.subheader("Seasonal Planning Calendar")
+    
+    # Component 1 - When to Budget
+    st.markdown("#### When to Budget: Wheat Crop Calendar (Punjab)")
+    st.caption("This shows WHEN during the season each cost is typically incurred, based on Punjab Agricultural University (PAU) recommended practices — not measured monthly data.")
+    
+    months = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr']
+    
+    seed_pred = predictions.get('Seed cost (Rs./Hectare)', 0)
+    fert_pred = predictions.get('Fertilizer cost (Rs./Hectare)', 0)
+    irr_pred = predictions.get('Irrigation charges (Rs./Hectare)', 0)
+    labour_pred = predictions.get('Human Labour cost (Rs./Hectare)', 0)
+    
+    allocations = {
+        'Seed cost': [0, seed_pred * 1.0, 0, 0, 0, 0, 0],
+        'Fertilizer cost': [0, fert_pred * 0.6, fert_pred * 0.4, 0, 0, 0, 0],
+        'Irrigation charges': [0, 0, irr_pred * 0.25, irr_pred * 0.25, irr_pred * 0.25, irr_pred * 0.125, irr_pred * 0.125],
+        'Human Labour cost': [0, labour_pred * 0.3, 0, labour_pred * 0.2, 0, labour_pred * 0.25, labour_pred * 0.25]
+    }
+    
+    fig3, ax3 = plt.subplots(figsize=(10, 5))
+    fig3.patch.set_facecolor('#0F1C2E')
+    ax3.set_facecolor('#0F1C2E')
+    
+    bottoms = np.zeros(len(months))
+    for component, alloc in allocations.items():
+        color = color_map.get(component, '#F2ECE1')
+        ax3.bar(months, alloc, bottom=bottoms, label=component, color=color)
+        bottoms += np.array(alloc)
+        
+    ax3.set_ylabel("Estimated Cost (Rs./Hectare)", color='#F2ECE1')
+    ax3.tick_params(colors='#F2ECE1')
+    for spine in ax3.spines.values():
+        spine.set_edgecolor('#8A97AC')
+        
+    legend3 = ax3.legend(bbox_to_anchor=(1.05, 1), loc='upper left', facecolor='#1A2C42', edgecolor='#8A97AC')
+    for text in legend3.get_texts():
+        text.set_color('#F2ECE1')
+    
+    st.pyplot(fig3)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Component 2 - Climate Context
+    st.markdown("#### Climate Context for Punjab (Typical Monthly Averages)")
+    st.caption("Typical monthly climate normals for Punjab — shown for seasonal planning context. These are historical averages, not a forecast, and are not statistically linked to the cost model above.")
+    
+    climate_data = pd.DataFrame({
+        'Month': ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
+        'Temperature (°C)': [25, 19, 14, 13, 16, 21, 27],
+        'Rainfall (mm)': [15, 5, 15, 25, 30, 20, 10]
+    })
+    
+    fig4, ax4_temp = plt.subplots(figsize=(10, 4))
+    fig4.patch.set_facecolor('#0F1C2E')
+    ax4_temp.set_facecolor('#0F1C2E')
+    
+    ax4_temp.plot(climate_data['Month'], climate_data['Temperature (°C)'], color='#E0A83E', marker='o', label='Temperature (°C)', linewidth=2)
+    ax4_temp.set_ylabel("Temperature (°C)", color='#E0A83E')
+    ax4_temp.tick_params(axis='y', colors='#E0A83E')
+    ax4_temp.tick_params(axis='x', colors='#F2ECE1')
+    
+    ax4_rain = ax4_temp.twinx()
+    ax4_rain.plot(climate_data['Month'], climate_data['Rainfall (mm)'], color='#6BA3A0', marker='s', linestyle='--', label='Rainfall (mm)', linewidth=2)
+    ax4_rain.set_ylabel("Rainfall (mm)", color='#6BA3A0')
+    ax4_rain.tick_params(axis='y', colors='#6BA3A0')
+    
+    for ax in [ax4_temp, ax4_rain]:
+        for spine in ax.spines.values():
+            spine.set_edgecolor('#8A97AC')
+            
+    # Combine legends for twin axes
+    lines_1, labels_1 = ax4_temp.get_legend_handles_labels()
+    lines_2, labels_2 = ax4_rain.get_legend_handles_labels()
+    fig4.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", bbox_to_anchor=(1, 1), bbox_transform=ax4_temp.transAxes, facecolor='#1A2C42', edgecolor='#8A97AC', labelcolor='#F2ECE1')
+    
+    st.pyplot(fig4)
+    
+    st.markdown("""
+    <div style="color: #F2ECE1; font-family: 'Inter', sans-serif; font-size: 0.9em; margin-top: 10px;">
+    <strong>Context:</strong> Low rainfall during November through February means that irrigation is essential (not optional) during this critical growth window. This explains why irrigation charges cluster heavily in these winter months.
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown('<hr class="gold-divider">', unsafe_allow_html=True)
 # --- Footer / Disclaimer ---
