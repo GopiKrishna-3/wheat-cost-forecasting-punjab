@@ -1,0 +1,18 @@
+__pycache__/
+.venv/
+venv/
+env/
+.env
+*.pyc
+*.pyo
+*.pyd
+.Python
+env.bak/
+venv.bak/
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*~
+.DS_Store
