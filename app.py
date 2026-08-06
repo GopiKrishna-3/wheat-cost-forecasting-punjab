@@ -135,8 +135,8 @@ if generate_btn:
                     xy=(bar.get_x() + bar.get_width() / 2, yval),
                     xytext=(0, 5), textcoords="offset points",
                     ha='center', va='bottom',
-                    fontsize=13, fontweight='bold', color='#0F1C2E',
-                    bbox=dict(facecolor='#F2ECE1', alpha=0.9, edgecolor='none', pad=2))
+                    fontsize=13, fontweight='bold', color='#F2ECE1',
+                    bbox=dict(facecolor='#1A2C42', alpha=0.85, edgecolor='#E0A83E', linewidth=1, pad=3))
     st.pyplot(fig)
     
     st.markdown('<hr class="gold-divider">', unsafe_allow_html=True)
@@ -220,8 +220,8 @@ if generate_btn:
                              xy=(row['Year_Num'], row[target_name]),
                              xytext=(0, y_offset), textcoords='offset points',
                              ha='center', va='bottom',
-                             fontsize=11, fontweight='bold', color='#0F1C2E',
-                             bbox=dict(facecolor='#F2ECE1', alpha=0.9, edgecolor='none', pad=1))
+                             fontsize=11, fontweight='bold', color='#F2ECE1',
+                             bbox=dict(facecolor='#1A2C42', alpha=0.85, edgecolor='#E0A83E', linewidth=1, pad=3))
             # Label forecast point
             forecast_index = len(historical_part)
             y_offset_forecast = 20 if forecast_index % 2 == 1 else 8
@@ -229,8 +229,8 @@ if generate_btn:
                          xy=(target_year, predictions[target_name]),
                          xytext=(0, y_offset_forecast), textcoords='offset points',
                          ha='center', va='bottom',
-                         fontsize=11, fontweight='bold', color='#0F1C2E',
-                         bbox=dict(facecolor='#F2ECE1', alpha=0.9, edgecolor='none', pad=1))
+                         fontsize=11, fontweight='bold', color='#F2ECE1',
+                         bbox=dict(facecolor='#1A2C42', alpha=0.85, edgecolor='#E0A83E', linewidth=1, pad=3))
     
     ax2.set_xticks(df_plot['Year_Num'].unique())
     # Format x-ticks as Year-Year+1
