@@ -103,8 +103,14 @@ st.sidebar.header("Forecast Settings")
 target_year = st.sidebar.slider("Select Year to Forecast", min_value=2022, max_value=2027, value=2022, step=1)
 generate_btn = st.sidebar.button("Generate Forecast")
 
-# --- Main Logic ---
+if 'forecast_generated' not in st.session_state:
+    st.session_state.forecast_generated = False
+
 if generate_btn:
+    st.session_state.forecast_generated = True
+
+# --- Main Logic ---
+if st.session_state.forecast_generated:
     st.header(f"Forecast for Year: {target_year}-{str(target_year+1)[-2:]}")
     
     # 1. Predictions
