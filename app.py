@@ -343,10 +343,12 @@ if st.session_state.forecast_generated:
                     
             elif granularity == "Week-to-week":
                 df_weekly = df_daily.resample('W').sum()
+                df_weekly.index = df_weekly.index.strftime('%Y-%m-%d')
                 st.bar_chart(df_weekly, color=[color_map.get(c, '#8A97AC') for c in df_weekly.columns])
                 
             elif granularity == "Month-to-month":
                 df_monthly = df_daily.resample('ME').sum()
+                df_monthly.index = df_monthly.index.strftime('%Y-%m (%b)')
                 st.bar_chart(df_monthly, color=[color_map.get(c, '#8A97AC') for c in df_monthly.columns])
         
     st.markdown("<hr class='gold-divider' style='border-top: 1px dashed #E0A83E; opacity: 0.5;'>", unsafe_allow_html=True)
