@@ -68,7 +68,7 @@ body, p, label, .stMarkdown {
 """, unsafe_allow_html=True)
 
 # --- Header ---
-st.markdown('<div class="eyebrow">GOVERNMENT DATA · CACP · PUNJAB WHEAT · 2017–2022</div>', unsafe_allow_html=True)
+st.markdown('<div class="eyebrow">GOVERNMENT DATA &middot; CACP &middot; PUNJAB WHEAT</div>', unsafe_allow_html=True)
 st.title("Punjab Wheat Input Cost Forecaster")
 st.markdown('<hr class="gold-divider">', unsafe_allow_html=True)
 
